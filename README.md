@@ -35,3 +35,9 @@ Well suited to be used in other scripts e.g. for acpi button binding.
 
 This tools read its information from `/sys`, so this feature has to be enabled
 in kernel.
+
+## Colors
+
+If you want colored output, then you have to put the file `colors.lib` in the
+same directory as `gov`. So downloading the `colors.lib` is optional, but colors
+are cool!

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd `dirname $0`
-source ./colors.lib
+source ./colors.lib 2>/dev/null
 
 function print_help_and_quit() {
     echo -e "Usage: ${CW}$0 [OPTIONS] [GOVERNOR]$Cw"
