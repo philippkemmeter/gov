@@ -1,0 +1,98 @@
+#!/bin/bash
+
+cd `dirname $0`
+source ./colors.lib
+
+function print_help_and_quit() {
+    echo -e "Usage: ${CW}$0 [OPTIONS] [GOVERNOR]$Cw"
+    echo
+    echo    "Changes the scaling governor of the cpus."
+    echo
+    echo -e "$Cu${CW}Available Options:$Cw"
+    echo -e "  ${CW}-c,--cpu CPUID$Cw If this option is set, the scaling of the"
+    echo -e "                 cpu of this ID will be changed. Possible values are {0,..n-1}"
+    echo -e "                 where n is the amount of the CPUs of your machine. Omit this"
+    echo -e "                 option to affect all CPUs."
+    echo -e "  ${CW}-h,--help$Cw      Shows this help"
+    echo
+    echo -e "$Cu${CW}Examples:$Cw"
+    echo    "    # Switch to powersave for CPU 0"
+    echo -e "    $CW$0 -c 0 powersave$Cw"
+    echo    "    # Echos the current active governor for CPU 1"
+    echo -e "    $CW$0 --cpu 1$Cw"
+    echo    "    # Switch to performance for all CPUs"
+    echo -e "    $CW$0 performance$Cw"
+    echo    "    # Echos the current active governor for all CPUs"
+    echo -e "    $CW$0 --cpu 1$Cw"
+    if [[ $# == 0 ]]
+    then
+        e=1
+    else
+        e=$1
+    fi
+    exit $e
+}
+
+function set_governor() {
+    echo $2 > /sys/devices/system/cpu/cpu${1}/cpufreq/scaling_governor
+}
+
+function get_governor() {
+    cat /sys/devices/system/cpu/cpu${1}/cpufreq/scaling_governor
+}
+
+cpu="all"
+governor=
+
+while [[ $# -ge 1 ]]
+do
+    case $1 in
+        -h|--help)
+            print_help_and_quit 0
+            ;;
+        -c|--cpu)
+            [[ "$2" == "" || "${2:0:1}" == "-" ]] && \
+                echo -e "${CR}Option $1 needs an argument.$Cw\n" && \
+                print_help_and_quit
+        
+            cpu=$2
+            shift 2
+            ;;
+        -*)
+            echo -e "${CR}Unknown option ${1}.$Cw\n" && \
+                print_help_and_quit
+            ;;
+        *)
+            [[ "$governor" != "" ]] && \
+                print_help_and_quit
+            governor=$1
+            shift 1
+            ;;
+    esac
+done
+
+
+if [[ "$governor" == "" ]]
+then
+    if [[ "$cpu" == "all" ]]
+    then
+        for cpu in `ls /sys/devices/system/cpu/ | grep 'cpu[0-9][0-9]*'`
+        do
+            cpu=${cpu:3}
+            governor=`get_governor $cpu`
+            echo "CPU $cpu: $governor"
+        done
+    else
+        echo "CPU $cpu: `get_governor $cpu`"
+    fi
+else
+    if [[ "$cpu" == "all" ]]
+    then
+        for cpu in `ls /sys/devices/system/cpu/ | grep 'cpu[0-9][0-9]*'`
+        do
+            set_governor ${cpu:3} $governor
+        done
+    else
+        set_governor $cpu $governor
+    fi
+fi
